@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>dvl</name>
+  <version>0.0.0</version>
+  <description>The dvl package</description>
+
+  <maintainer email="thies.lennart.alff@tuhh.de">Thies Lennart Alff</maintainer>
+  <license>GPLv2</license>
+
+  <url type="website">hippocampusrobotics.github.io/docs</url>
+
+  <author email="thies.lennart.alff@tuhh.de">Thies Lennart Alff</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>nlohmann-json-dev</depend>
+  <depend>dvl_msgs</depend>
+  <depend>std_srvs</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
+
