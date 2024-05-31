@@ -17,9 +17,14 @@ class DvlNode : public rclcpp::Node {
   explicit DvlNode(const rclcpp::NodeOptions &options);
   void InitPublishers();
   void InitServices();
+  void InitParams();
   void Run();
 
  private:
+  struct Params {
+    std::string ip_address;
+    int port;
+  };
   std::map<std::string, ServiceHandlerVariant> service_handlers_;
 
   struct ServiceHandlers {
@@ -37,5 +42,7 @@ class DvlNode : public rclcpp::Node {
   rclcpp::Publisher<dvl_msgs::msg::DeadReckoningReport>::SharedPtr
       dead_reckoning_pub_;
   rclcpp::TimerBase::SharedPtr run_timer_;
+
+  Params params_;
 };
 }  // namespace dvl

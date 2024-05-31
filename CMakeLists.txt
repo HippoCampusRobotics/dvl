@@ -33,6 +33,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(dvl_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(hippo_common REQUIRED)
 
 include_directories(
   include
@@ -57,6 +58,7 @@ ament_target_dependencies(${lib_name}
   rclcpp
   dvl_msgs
   std_srvs
+  hippo_common
 )
 
 ament_export_libraries(${lib_name}_export HAS_LIBRARY_TARGET)
@@ -71,6 +73,7 @@ install(TARGETS ${lib_name}
 set(exec_name dvl_node)
 add_executable(${exec_name}
   src/dvl_node.cpp
+  src/dvl_node_params.cpp
 )
 ament_target_dependencies(${exec_name}
   rclcpp
@@ -88,10 +91,10 @@ install(TARGETS
 ################################################################################
 # install shared resources
 ################################################################################
-#install(
-#  DIRECTORY launch config
-#  DESTINATION share/${PROJECT_NAME}
-#)
+install(
+  DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
 
 ament_package()
 

@@ -5,6 +5,7 @@ DvlNode::DvlNode(const rclcpp::NodeOptions &_options)
     : Node("dvl", _options)
 
 {
+  InitParams();
   InitPublishers();
   InitServices();
 
@@ -50,8 +51,9 @@ void DvlNode::InitServices() {
 
 void DvlNode::Run() {
   if (!dvl_) {
-    RCLCPP_INFO(get_logger(), "Creating DVL interface.");
-    dvl_ = std::make_shared<Dvl>("192.168.0.126", 16171);
+    RCLCPP_INFO(get_logger(), "Creating DVL interface at: %s:%d",
+                params_.ip_address.c_str(), params_.port);
+    dvl_ = std::make_shared<Dvl>(params_.ip_address, params_.port);
     if (!dvl_) {
       RCLCPP_ERROR(get_logger(), "Failed to create instace of DVL");
       return;

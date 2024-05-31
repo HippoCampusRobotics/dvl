@@ -19,6 +19,7 @@
   <depend>nlohmann-json-dev</depend>
   <depend>dvl_msgs</depend>
   <depend>std_srvs</depend>
+  <depend>hippo_common</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
