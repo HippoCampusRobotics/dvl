@@ -16,6 +16,7 @@ class Dvl {
   std::optional<nlohmann::json> ReadJsonReport();
   bool SendCommand(Cmd);
   bool SendCommand(Cmd, const nlohmann::json &parameters);
+  bool ResetDeadReckoning();
   bool SetSpeedOfSound(double);
   bool SetAcousticEnabled(bool);
   bool SendGetConfig();

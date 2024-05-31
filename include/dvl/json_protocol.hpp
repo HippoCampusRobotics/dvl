@@ -3,6 +3,9 @@
 #include <dvl_msgs/msg/dead_reckoning_report.hpp>
 #include <dvl_msgs/msg/velocity_transducer_report.hpp>
 #include <dvl_msgs/srv/get_config.hpp>
+#include <dvl_msgs/srv/reset_dead_reckoning.hpp>
+#include <dvl_msgs/srv/set_acoustic_enabled.hpp>
+#include <dvl_msgs/srv/set_speed_of_sound.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <std_srvs/srv/trigger.hpp>
@@ -150,15 +153,34 @@ inline dvl_msgs::srv::GetConfig::Response::SharedPtr parse_get_config(
   return response;
 }
 
-inline std_srvs::srv::Trigger::Response::SharedPtr parse_reset_dead_reckoning(
+template <typename T>
+typename T::Response::SharedPtr parse_response_without_return_value(
     const nlohmann::json &data) {
   if (!is_command_response(data, cmd::kResetDeadReckoning)) {
     return nullptr;
   }
-  auto response = std::make_shared<std_srvs::srv::Trigger::Response>();
+  auto response = std::make_shared<typename T::Response>();
   response->success = is_success(data);
   response->message = response_message(data);
   return response;
+}
+
+inline dvl_msgs::srv::ResetDeadReckoning::Response::SharedPtr
+parse_reset_dead_reckoning(const nlohmann::json &data) {
+  return parse_response_without_return_value<dvl_msgs::srv::ResetDeadReckoning>(
+      data);
+}
+
+inline dvl_msgs::srv::SetAcousticEnabled::Response::SharedPtr
+parse_set_acoustic_enabled(const nlohmann::json &data) {
+  return parse_response_without_return_value<dvl_msgs::srv::SetAcousticEnabled>(
+      data);
+}
+
+inline dvl_msgs::srv::SetSpeedOfSound::Response::SharedPtr
+parse_set_speed_of_sound(const nlohmann::json &data) {
+  return parse_response_without_return_value<dvl_msgs::srv::SetSpeedOfSound>(
+      data);
 }
 
 inline std::optional<dvl_msgs::msg::VelocityTransducerReport>

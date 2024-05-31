@@ -63,6 +63,10 @@ bool Dvl::SendCommand(Cmd cmd, const nlohmann::json &parameters) {
   return SendJSON(json_data);
 }
 
+bool Dvl::ResetDeadReckoning() {
+  return SendCommand(Cmd::ResetDeadReckoning());
+}
+
 bool Dvl::SetSpeedOfSound(double speed_of_sound) {
   nlohmann::json parameters = {
       {

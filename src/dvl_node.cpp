@@ -2,9 +2,9 @@
 
 namespace dvl {
 DvlNode::DvlNode(const rclcpp::NodeOptions &_options)
-    : Node("dvl", _options),
-      get_config_handler_(*this, Cmd::GetConfig()),
-      reset_dead_reckoning_handler_(*this, Cmd::ResetDeadReckoning()) {
+    : Node("dvl", _options)
+
+{
   InitPublishers();
   InitServices();
 
@@ -24,7 +24,29 @@ void DvlNode::InitPublishers() {
       create_publisher<dvl_msgs::msg::DeadReckoningReport>(name, qos);
 }
 
-void DvlNode::InitServices() {}
+void DvlNode::InitServices() {
+  std::string name;
+  std::string key;
+
+  key = "get_config";
+  name = "~/" + key;
+  service_handlers_[key] = ServiceHandler<dvl_msgs::srv::GetConfig>(this, name);
+
+  key = "reset_dead_reckoning";
+  name = "~/" + key;
+  service_handlers_[key] =
+      ServiceHandler<dvl_msgs::srv::ResetDeadReckoning>(this, name);
+
+  key = "set_acoustic_enabled";
+  name = "~/" + key;
+  service_handlers_[key] =
+      ServiceHandler<dvl_msgs::srv::SetAcousticEnabled>(this, name);
+
+  key = "set_speed_of_sound";
+  name = "~/" + key;
+  service_handlers_[key] =
+      ServiceHandler<dvl_msgs::srv::SetSpeedOfSound>(this, name);
+}
 
 void DvlNode::Run() {
   if (!dvl_) {
@@ -35,8 +57,10 @@ void DvlNode::Run() {
       return;
     }
     RCLCPP_INFO(get_logger(), "DVL interface created.");
-    get_config_handler_.SetDVL(dvl_);
-    reset_dead_reckoning_handler_.SetDVL(dvl_);
+    for (auto const &[key, value] : service_handlers_) {
+      std::visit([this](auto &handler) { handler.SetDVL(dvl_); },
+                 service_handlers_.at(key));
+    }
   }
 
   auto report = dvl_->ReadJsonReport();
@@ -62,21 +86,69 @@ void DvlNode::Run() {
 }
 
 void DvlNode::HandleCommandResponse(const nlohmann::json &_data) {
+  using namespace dvl_msgs::srv;
   const CmdId::CmdId cmd_id = get_command_id(_data);
   switch (cmd_id) {
     case CmdId::kGetConfig: {
       auto response = parse_get_config(_data);
-      get_config_handler_.OnDVLResponse(response);
+      std::visit(
+          [&response](auto &handler) {
+            using T = std::decay_t<decltype(handler)>;
+            if constexpr (std::is_same_v<ServiceHandler<GetConfig>, T>) {
+              handler.OnDVLResponse(response);
+            }
+          },
+          service_handlers_.at("get_config"));
       return;
     }
     case CmdId::kResetDeadReckoning: {
       auto response = parse_reset_dead_reckoning(_data);
-      reset_dead_reckoning_handler_.OnDVLResponse(response);
+      std::visit(
+          [&response](auto &handler) {
+            using T = std::decay_t<decltype(handler)>;
+            if constexpr (std::is_same_v<ServiceHandler<ResetDeadReckoning>,
+                                         T>) {
+              handler.OnDVLResponse(response);
+            }
+          },
+          service_handlers_.at("reset_dead_reckoning"));
+      return;
+    }
+    case CmdId::kSetConfig: {
+      HandleSetConfigResponse(_data);
       return;
     }
   }
   RCLCPP_WARN(get_logger(), "Unhandled command response: \n%s",
               _data.dump(4).c_str());
+}
+void DvlNode::HandleSetConfigResponse(const nlohmann::json &_data) {
+  using namespace dvl_msgs::srv;
+  const nlohmann::json &params = _data["parameters"];
+  if (params.contains("speed_of_sound")) {
+    auto response = parse_set_speed_of_sound(_data);
+    std::visit(
+        [&response](auto &handler) {
+          using T = std::decay_t<decltype(handler)>;
+          if constexpr (std::is_same_v<ServiceHandler<SetSpeedOfSound>, T>) {
+            handler.OnDVLResponse(response);
+          }
+        },
+        service_handlers_.at("set_speed_of_sound"));
+  } else if (params.contains("acoustic_enabled")) {
+    auto response = parse_set_acoustic_enabled(_data);
+    std::visit(
+        [&response](auto &handler) {
+          using T = std::decay_t<decltype(handler)>;
+          if constexpr (std::is_same_v<ServiceHandler<SetAcousticEnabled>, T>) {
+            handler.OnDVLResponse(response);
+          }
+        },
+        service_handlers_.at("set_acoustic_enabled"));
+  } else {
+    // do nothing?
+    RCLCPP_INFO(get_logger(), "Unhandled parameter for set_config response.");
+  }
 }
 
 }  // namespace dvl
