@@ -92,7 +92,7 @@ inline bool is_command_response(const nlohmann::json &data, std::string cmd) {
 }
 
 inline Cmd get_command_type(const nlohmann::json &data) {
-  auto type = data["type"];
+  auto type = data["response_to"];
   if (type == Cmd::SetConfig().Name()) {
     return Cmd::SetConfig();
   } else if (type == Cmd::GetConfig().Name()) {
@@ -108,7 +108,7 @@ inline Cmd get_command_type(const nlohmann::json &data) {
   }
 }
 inline CmdId::CmdId get_command_id(const nlohmann::json &data) {
-  auto type = data["type"];
+  auto type = data["response_to"];
   if (type == Cmd::SetConfig().Name()) {
     return Cmd::SetConfig().CmdID();
   } else if (type == Cmd::GetConfig().Name()) {
@@ -156,7 +156,8 @@ inline dvl_msgs::srv::GetConfig::Response::SharedPtr parse_get_config(
 template <typename T>
 typename T::Response::SharedPtr parse_response_without_return_value(
     const nlohmann::json &data) {
-  if (!is_command_response(data, cmd::kResetDeadReckoning)) {
+  if (!is_command_response(data, cmd::kResetDeadReckoning) &&
+      !is_command_response(data, cmd::kSetConfig)) {
     return nullptr;
   }
   auto response = std::make_shared<typename T::Response>();
@@ -197,7 +198,15 @@ parse_velocity_transducer_report(const nlohmann::json &data) {
 
   v.figure_of_merit = data["fom"];
   v.valid = data["velocity_valid"];
-  v.covariance = data["covariance"];
+  int i = 0;
+  for (const auto &row : data["covariance"]) {
+    int j = 0;
+    for (const auto &elem : row) {
+      v.covariance[i * 3 + j] = elem;
+      ++j;
+    }
+    i++;
+  }
   v.altitude = data["altitude"];
   v.status = data["status"];
   v.time_of_validity = data["time_of_validity"];

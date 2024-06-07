@@ -25,14 +25,7 @@ class DvlNode : public rclcpp::Node {
     std::string ip_address;
     int port;
   };
-  std::map<std::string, ServiceHandlerVariant> service_handlers_;
 
-  struct ServiceHandlers {
-    ServiceHandler<dvl_msgs::srv::GetConfig> get_config;
-    ServiceHandler<dvl_msgs::srv::ResetDeadReckoning> reset_dead_reckoning;
-    ServiceHandler<dvl_msgs::srv::SetAcousticEnabled> set_acoustic_enabled;
-    ServiceHandler<dvl_msgs::srv::SetSpeedOfSound> set_speed_of_sound;
-  };
   void HandleCommandResponse(const nlohmann::json &data);
   void HandleSetConfigResponse(const nlohmann::json &data);
 
@@ -43,6 +36,12 @@ class DvlNode : public rclcpp::Node {
       dead_reckoning_pub_;
   rclcpp::TimerBase::SharedPtr run_timer_;
 
+  ServiceHandler<dvl_msgs::srv::GetConfig> get_config_handler_;
+  ServiceHandler<dvl_msgs::srv::ResetDeadReckoning>
+      reset_dead_reckoning_handler_;
+  ServiceHandler<dvl_msgs::srv::SetAcousticEnabled>
+      set_acoustic_enabled_handler_;
+  ServiceHandler<dvl_msgs::srv::SetSpeedOfSound> set_speed_of_sound_handler_;
   Params params_;
 };
 }  // namespace dvl

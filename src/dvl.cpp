@@ -70,7 +70,6 @@ bool Dvl::ResetDeadReckoning() {
 bool Dvl::SetSpeedOfSound(double speed_of_sound) {
   nlohmann::json parameters = {
       {
-          "parameters",
           {"speed_of_sound", speed_of_sound},
       },
   };
@@ -78,10 +77,9 @@ bool Dvl::SetSpeedOfSound(double speed_of_sound) {
 }
 
 bool Dvl::SetAcousticEnabled(bool enabled) {
-  nlohmann::json parameters = {{
-      "parameters:",
+  nlohmann::json parameters = {
       {"acoustic_enabled", enabled},
-  }};
+  };
   return SendCommand(Cmd::SetConfig(), parameters);
 }
 

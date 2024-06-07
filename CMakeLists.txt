@@ -21,7 +21,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
-set(CXX_FLAGS -Wall -Wextra -Wpedantic -Wshadow -O2)
+set(CXX_FLAGS -Wall -Wextra -Wpedantic -Wshadow -O2 -fPIC -g)
 add_compile_options(${CXX_FLAGS})
 
 ## Find catkin macros and libraries
