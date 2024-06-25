@@ -26,6 +26,10 @@ class ServiceHandler {
     Initialize();
   }
 
+  void SetServiceCallback(std::function<void(void)> _fun) {
+    service_called_callback_ = _fun;
+  }
+
   void Initialize(rclcpp::Node *parent_node, const std::string &service_name) {
     node_ = parent_node;
     service_name_ = service_name;
@@ -190,11 +194,6 @@ class ServiceHandler {
   rclcpp::Node *node_ = nullptr;
   std::string service_name_;
   rclcpp::TimerBase::SharedPtr timer_;
+  std::function<void(void)> service_called_callback_;
 };
-
-typedef std::variant<ServiceHandler<dvl_msgs::srv::GetConfig>,
-                     ServiceHandler<dvl_msgs::srv::ResetDeadReckoning>,
-                     ServiceHandler<dvl_msgs::srv::SetAcousticEnabled>,
-                     ServiceHandler<dvl_msgs::srv::SetSpeedOfSound>>
-    ServiceHandlerVariant;
 }  // namespace dvl
