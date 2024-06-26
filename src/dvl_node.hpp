@@ -44,5 +44,6 @@ class DvlNode : public rclcpp::Node {
       set_acoustic_enabled_handler_;
   ServiceHandler<dvl_msgs::srv::SetSpeedOfSound> set_speed_of_sound_handler_;
   Params params_;
+  bool initial_run_{true};
 };
 }  // namespace dvl

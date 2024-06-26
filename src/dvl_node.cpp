@@ -50,6 +50,11 @@ void DvlNode::Run() {
     dvl_.reset();
     return;
   }
+  // disable the dvl on start to avoid overheat while not inside the water.
+  if (initial_run_) {
+    dvl_->SetAcousticEnabled(false);
+    initial_run_ = false;
+  }
   // RCLCPP_INFO(get_logger(), "Received data: \n%s",
   // (*report).dump(4).c_str());
   if (is_dead_reckoning_report(*report)) {
