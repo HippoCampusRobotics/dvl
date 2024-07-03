@@ -156,8 +156,8 @@ inline dvl_msgs::srv::GetConfig::Response::SharedPtr parse_get_config(
 template <typename T>
 typename T::Response::SharedPtr parse_response_without_return_value(
     const nlohmann::json &data) {
-  if (!is_command_response(data, cmd::kResetDeadReckoning) &&
-      !is_command_response(data, cmd::kSetConfig)) {
+  if (!(is_command_response(data, cmd::kResetDeadReckoning) ||
+        is_command_response(data, cmd::kSetConfig))) {
     return nullptr;
   }
   auto response = std::make_shared<typename T::Response>();
