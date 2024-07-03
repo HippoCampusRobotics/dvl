@@ -1,7 +1,9 @@
 #include "dvl/dvl.hpp"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -9,6 +11,7 @@
 
 #include <chrono>
 #include <rclcpp/logging.hpp>
+#include <thread>
 
 #include "dvl/json_protocol.hpp"
 
@@ -21,6 +24,16 @@ Dvl::Dvl(const std::string &ip_address, int port)
 
 Dvl::~Dvl() { close(socket_); }
 
+bool Dvl::ConnectTCP(int tries, std::chrono::milliseconds delay) {
+  for (int i = 0; i < tries; ++i) {
+    if (ConnectTCP()) {
+      return true;
+    }
+    std::this_thread::sleep_for(delay);
+  }
+  return false;
+}
+
 bool Dvl::ConnectTCP() {
   struct addrinfo hints;
   struct addrinfo *info = nullptr;
@@ -32,20 +45,51 @@ bool Dvl::ConnectTCP() {
                            &hints, &info);
   if (status != 0) {
     freeaddrinfo(info);
-    RCLCPP_ERROR(get_logger(), "getaddrinfo() failed: %s",
+    RCLCPP_DEBUG(get_logger(), "getaddrinfo() failed: %s",
                  gai_strerror(status));
     return false;
   }
   socket_ = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
-  // no call to bind() since we do not care for our local port. Without binding
-  // manually, the kernel will choose our port
-  if (connect(socket_, info->ai_addr, info->ai_addrlen) != 0) {
+  // make the socket non blocking to we do not stall our program.
+  int opts;
+  opts = fcntl(socket_, F_GETFD, NULL);
+  fcntl(socket_, F_SETFL, opts | O_NONBLOCK);
+
+  // let's check if connect immediately succeeds.
+  if (connect(socket_, info->ai_addr, info->ai_addrlen) == 0) {
     freeaddrinfo(info);
-    RCLCPP_ERROR(get_logger(), "connect() failed: %s", strerror(errno));
-    return false;
+    return true;
   }
   freeaddrinfo(info);
-  return true;
+
+  // let's if we can poll successfully within a given timeout interval
+  struct pollfd fd;
+  fd.fd = socket_;
+  fd.events = POLLOUT;
+  int poll_res = poll(&fd, 1, 500);
+  if (poll_res > 0) {
+    socklen_t value_length;
+    int value{0};
+    if (getsockopt(socket_, SOL_SOCKET, SO_ERROR, (void *)&value,
+                   &value_length) != 0) {
+      RCLCPP_DEBUG(get_logger(), "Failed to read socket options.");
+      return false;
+    }
+    if (value) {
+      // since we read the socket error, this means we have an error.
+      RCLCPP_DEBUG(get_logger(), "Failed to connect().");
+      return false;
+    }
+    opts = fcntl(socket_, F_GETFD, NULL);
+    opts &= ~(O_NONBLOCK);
+    fcntl(socket_, F_SETFL, opts);
+    return true;
+  }
+  if (poll_res == 0) {
+    RCLCPP_DEBUG(get_logger(), "Connect() timed out.");
+  }
+
+  return false;
 }
 
 bool Dvl::SendCommand(Cmd cmd) {
@@ -69,9 +113,7 @@ bool Dvl::ResetDeadReckoning() {
 
 bool Dvl::SetSpeedOfSound(double speed_of_sound) {
   nlohmann::json parameters = {
-      {
-          {"speed_of_sound", speed_of_sound},
-      },
+      {"speed_of_sound", speed_of_sound},
   };
   return SendCommand(Cmd::SetConfig(), parameters);
 }
@@ -114,15 +156,15 @@ std::optional<nlohmann::json> Dvl::ReadJsonReport() {
   do {
     n_bytes = recv(socket_, (void *)&buf, sizeof(buf), 0);
     if (n_bytes < 0) {
-      if (errno == EBADF) {
-        ConnectTCP();
+      if (errno == EBADF || errno == ENOTSOCK) {
+        ConnectTCP(3, std::chrono::milliseconds(100));
         continue;
       }
-      RCLCPP_ERROR(get_logger(), "Failed to receive data: %s", strerror(errno));
+      RCLCPP_DEBUG(get_logger(), "Failed to receive data: %s", strerror(errno));
       return std::nullopt;
     } else if (n_bytes == 0) {
-      if (!ConnectTCP()) {
-        RCLCPP_ERROR(get_logger(), "Failed to open socket.");
+      if (!ConnectTCP(3, std::chrono::milliseconds(100))) {
+        RCLCPP_DEBUG(get_logger(), "Failed to open socket.");
         return std::nullopt;
       }
       continue;

@@ -27,7 +27,25 @@ void DvlNode::InitPublishers() {
       create_publisher<dvl_msgs::msg::DeadReckoningReport>(name, qos);
 }
 
-void DvlNode::InitServices() {}
+void DvlNode::InitServices() {
+  auto callback = [this](const std::string name) {
+    return IsServiceAllowedToRun(name);
+  };
+  get_config_handler_.SetServiceAllowedToRunCallback(callback);
+  reset_dead_reckoning_handler_.SetServiceAllowedToRunCallback(callback);
+  set_acoustic_enabled_handler_.SetServiceAllowedToRunCallback(callback);
+  set_speed_of_sound_handler_.SetServiceAllowedToRunCallback(callback);
+}
+
+bool DvlNode::IsServiceAllowedToRun(const std::string &) {
+  if (get_config_handler_.IsWaitingForResponse() ||
+      reset_dead_reckoning_handler_.IsWaitingForResponse() ||
+      set_acoustic_enabled_handler_.IsWaitingForResponse() ||
+      set_speed_of_sound_handler_.IsWaitingForResponse()) {
+    return false;
+  }
+  return true;
+}
 
 void DvlNode::Run() {
   if (!dvl_) {
@@ -77,6 +95,7 @@ void DvlNode::Run() {
 
 void DvlNode::HandleCommandResponse(const nlohmann::json &_data) {
   using namespace dvl_msgs::srv;
+  RCLCPP_INFO(get_logger(), "%s", _data.dump(4).c_str());
   const CmdId::CmdId cmd_id = get_command_id(_data);
   switch (cmd_id) {
     case CmdId::kGetConfig: {
@@ -100,6 +119,9 @@ void DvlNode::HandleCommandResponse(const nlohmann::json &_data) {
 void DvlNode::HandleSetConfigResponse(const nlohmann::json &_data) {
   using namespace dvl_msgs::srv;
   if (set_speed_of_sound_handler_.IsWaitingForResponse()) {
+    RCLCPP_INFO(get_logger(),
+                "Trying to parse set_speed_of_sound response: \n%s",
+                _data.dump(4).c_str());
     auto response = parse_set_speed_of_sound(_data);
     set_speed_of_sound_handler_.OnDVLResponse(response);
   }

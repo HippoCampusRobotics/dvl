@@ -29,6 +29,7 @@ class DvlNode : public rclcpp::Node {
   void HandleCommandResponse(const nlohmann::json &data);
   void HandleSetConfigResponse(const nlohmann::json &data);
   void OnConfigServiceCalled();
+  bool IsServiceAllowedToRun(const std::string &name);
 
   std::shared_ptr<Dvl> dvl_;
   rclcpp::Publisher<dvl_msgs::msg::VelocityTransducerReport>::SharedPtr

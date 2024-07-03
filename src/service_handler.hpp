@@ -26,8 +26,9 @@ class ServiceHandler {
     Initialize();
   }
 
-  void SetServiceCallback(std::function<void(void)> _fun) {
-    service_called_callback_ = _fun;
+  void SetServiceAllowedToRunCallback(
+      std::function<bool(const std::string &)> _fun) {
+    service_allowed_to_run_callback_ = _fun;
   }
 
   void Initialize(rclcpp::Node *parent_node, const std::string &service_name) {
@@ -63,6 +64,13 @@ class ServiceHandler {
 
     // header is required to send the response to the correct client
     req_id_ = _header;
+    if (service_allowed_to_run_callback_) {
+      if (!service_allowed_to_run_callback_(service_name_)) {
+        SendFailResponse("Service currently not allowed to run.");
+        req_id_.reset();
+        return;
+      }
+    }
     std::shared_ptr<Dvl> dvl = dvl_weak_.lock();
     if (!dvl) {
       error_message = "DVL not available.";
@@ -116,7 +124,9 @@ class ServiceHandler {
       return;
     }
     if (!_response) {
-      return;
+      _response = std::make_shared<typename ServiceT::Response>();
+      _response->success = false;
+      _response->message = "Failed to parse response";
     }
     RCLCPP_INFO(node_->get_logger(), "Trying to respond to request.");
     service_->send_response(*req_id_, *_response);
@@ -194,6 +204,6 @@ class ServiceHandler {
   rclcpp::Node *node_ = nullptr;
   std::string service_name_;
   rclcpp::TimerBase::SharedPtr timer_;
-  std::function<void(void)> service_called_callback_;
+  std::function<bool(const std::string &)> service_allowed_to_run_callback_;
 };
 }  // namespace dvl

@@ -1,6 +1,7 @@
 #pragma once
 #include <sys/socket.h>
 
+#include <chrono>
 #include <dvl_msgs/msg/velocity_transducer_report.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
@@ -21,6 +22,7 @@ class Dvl {
   bool SetAcousticEnabled(bool);
   bool SendGetConfig();
   bool SendResetDeadReckoning();
+  bool ConnectTCP(int tries, std::chrono::milliseconds delay);
 
  private:
   bool SendJSON(const nlohmann::json &data);
