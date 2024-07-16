@@ -2,8 +2,8 @@
 Changelog for package dvl
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2024-07-16)
+------------------
 * do not allow parallel service requests on dvl
 * simplified visual representation of logic expression
 * disable acoustic transducers by default on startup to avoid overheating
