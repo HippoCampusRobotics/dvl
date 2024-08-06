@@ -2,6 +2,13 @@
 Changelog for package dvl
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added required dependency on simple_launch
+* fixed README text
+* added README
+* Contributors: Thies Lennart Alff
+
 1.0.0 (2024-07-16)
 ------------------
 * do not allow parallel service requests on dvl
