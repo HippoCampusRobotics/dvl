@@ -2,8 +2,8 @@
 Changelog for package dvl
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2024-08-06)
+------------------
 * added required dependency on simple_launch
 * fixed README text
 * added README
